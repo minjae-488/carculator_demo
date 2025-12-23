@@ -51,13 +51,37 @@ modeToggleBtn.addEventListener('click', () => {
     }
 });
 
+// History Logic
+const historyToggleBtn = document.getElementById('history-toggle'); // ID를 추가해야 함 (HTML 수정 필요)
+const historyPanel = document.getElementById('history-panel');
+const historyCloseBtn = document.getElementById('history-close');
+const historyClearBtn = document.getElementById('history-clear');
+const historyList = document.getElementById('history-list');
+
+// HTML에 ID가 없는 경우를 대비해 querySelector 사용 (안전장치)
+const safeHistoryToggleBtn = historyToggleBtn || document.querySelector('[title="히스토리 (준비중)"]') || document.querySelector('[title="히스토리"]');
+
+if (safeHistoryToggleBtn) {
+    safeHistoryToggleBtn.addEventListener('click', () => {
+        historyPanel.classList.remove('translate-y-full');
+    });
+}
+
+if (historyCloseBtn) {
+    historyCloseBtn.addEventListener('click', () => {
+        historyPanel.classList.add('translate-y-full');
+    });
+}
+
 // Calculator Logic
 class Calculator {
     constructor(previousOperandTextElement, currentOperandTextElement) {
         this.previousOperandTextElement = previousOperandTextElement;
         this.currentOperandTextElement = currentOperandTextElement;
         this.clear();
-        this.isDegrees = false; // Default to Radians
+        this.isDegrees = false;
+        this.history = JSON.parse(localStorage.getItem('calculator-history')) || [];
+        this.renderHistory();
     }
 
     clear() {
@@ -101,6 +125,9 @@ class Calculator {
         const prev = parseFloat(this.previousOperand);
         const current = parseFloat(this.currentOperand);
         if (isNaN(prev) || isNaN(current)) return;
+
+        let operationSymbol = this.operation;
+
         switch (this.operation) {
             case '+':
                 computation = prev + current;
@@ -110,6 +137,7 @@ class Calculator {
                 break;
             case '*':
                 computation = prev * current;
+                operationSymbol = '×';
                 break;
             case '/':
                 if (current === 0) {
@@ -119,16 +147,67 @@ class Calculator {
                     return;
                 }
                 computation = prev / current;
+                operationSymbol = '÷';
                 break;
             case 'x^y':
                 computation = Math.pow(prev, current);
+                operationSymbol = '^';
                 break;
             default:
                 return;
         }
+
+        // Save to History
+        this.addToHistory(`${prev} ${operationSymbol} ${current}`, computation);
+
         this.currentOperand = computation;
         this.operation = undefined;
         this.previousOperand = '';
+    }
+
+    addToHistory(expression, result) {
+        const historyItem = {
+            expression: expression,
+            result: result,
+            timestamp: new Date().getTime()
+        };
+        this.history.unshift(historyItem); // Add to beginning
+        if (this.history.length > 50) this.history.pop(); // Max 50 items
+        localStorage.setItem('calculator-history', JSON.stringify(this.history));
+        this.renderHistory();
+    }
+
+    clearHistory() {
+        this.history = [];
+        localStorage.removeItem('calculator-history');
+        this.renderHistory();
+    }
+
+    renderHistory() {
+        if (!historyList) return;
+        historyList.innerHTML = '';
+
+        if (this.history.length === 0) {
+            historyList.innerHTML = '<div class="text-center text-slate-400 mt-10">기록이 없습니다.</div>';
+            return;
+        }
+
+        this.history.forEach((item, index) => {
+            const el = document.createElement('div');
+            el.className = 'flex flex-col p-3 rounded-xl bg-white dark:bg-[#1E2933] active:scale-95 transition-transform cursor-pointer shadow-sm border border-slate-100 dark:border-slate-700/50';
+            el.innerHTML = `
+                <div class="text-slate-500 dark:text-[#9dabb9] text-sm text-right font-medium opacity-80 mb-1">${item.expression} =</div>
+                <div class="text-primary text-xl font-bold text-right">${this.getDisplayNumber(item.result)}</div>
+            `;
+            el.addEventListener('click', () => {
+                this.currentOperand = item.result;
+                this.previousOperand = ''; // Clear previous operation when loading history
+                this.operation = undefined;
+                this.updateDisplay();
+                historyPanel.classList.add('translate-y-full'); // Close panel
+            });
+            historyList.appendChild(el);
+        });
     }
 
     // Scientific Functions
@@ -136,47 +215,44 @@ class Calculator {
         let current = parseFloat(this.currentOperand);
         if (isNaN(current)) return;
         let result;
+        let expressionStr = '';
 
         switch (action) {
             case 'sin':
                 result = this.isDegrees ? Math.sin(current * Math.PI / 180) : Math.sin(current);
+                expressionStr = `sin(${current})`;
                 break;
             case 'cos':
                 result = this.isDegrees ? Math.cos(current * Math.PI / 180) : Math.cos(current);
+                expressionStr = `cos(${current})`;
                 break;
             case 'tan':
                 result = this.isDegrees ? Math.tan(current * Math.PI / 180) : Math.tan(current);
+                expressionStr = `tan(${current})`;
                 break;
             case 'ln':
-                if (current <= 0) {
-                    alert("정의되지 않은 입력입니다."); // 간단한 에러
-                    return;
-                }
+                if (current <= 0) { alert("정의되지 않은 입력입니다."); return; }
                 result = Math.log(current);
+                expressionStr = `ln(${current})`;
                 break;
             case 'log':
-                if (current <= 0) {
-                    alert("정의되지 않은 입력입니다.");
-                    return;
-                }
+                if (current <= 0) { alert("정의되지 않은 입력입니다."); return; }
                 result = Math.log10(current);
+                expressionStr = `log(${current})`;
                 break;
             case 'sq':
                 result = Math.pow(current, 2);
+                expressionStr = `sq(${current})`;
                 break;
             case 'sqrt':
-                if (current < 0) {
-                    alert("허수는 지원하지 않습니다.");
-                    return;
-                }
+                if (current < 0) { alert("허수는 지원하지 않습니다."); return; }
                 result = Math.sqrt(current);
+                expressionStr = `√(${current})`;
                 break;
             case 'inv':
-                if (current === 0) {
-                    alert("0으로 나눌 수 없습니다.");
-                    return;
-                }
+                if (current === 0) { alert("0으로 나눌 수 없습니다."); return; }
                 result = 1 / current;
+                expressionStr = `1/(${current})`;
                 break;
             case 'exp': // e constant inputs
                 this.currentOperand = Math.E.toString();
@@ -188,23 +264,18 @@ class Calculator {
                 this.chooseOperation('x^y');
                 return;
             case 'deg':
-                // Toggle Deg/Rad
                 this.isDegrees = !this.isDegrees;
                 const btn = document.querySelector('[data-scientific="deg"]');
-                if (btn) btn.innerText = this.isDegrees ? 'rad' : 'deg'; // 보여줄 텍스트: 다음 상태
+                if (btn) btn.innerText = this.isDegrees ? 'rad' : 'deg';
                 return;
             default:
                 return;
         }
 
-        // 결과를 현재 오퍼랜드에 반영 (단항 연산의 경우)
-        // 계산된 값은 정밀도 문제 해결을 위해 약간의 처리 필요할 수 있음
-        // 여기서는 간단히 처리
         if (result !== undefined) {
-            // 부동 소수점 오차 보정 (예: sin(PI)가 0이 아닌 아주 작은 수가 나오는 문제)
             if (Math.abs(result) < 1e-10) result = 0;
+            this.addToHistory(expressionStr, result); // Add utility functions to history too
             this.currentOperand = result;
-            // 계산 완료 후 이전 기록 리셋하지 않음 (연속 계산 가능)
         }
     }
 
@@ -257,7 +328,7 @@ class Calculator {
 // DOM Elements
 const numberButtons = document.querySelectorAll('[data-number]');
 const operationButtons = document.querySelectorAll('[data-operation]');
-const scientificButtons = document.querySelectorAll('[data-scientific]'); // 추가
+const scientificButtons = document.querySelectorAll('[data-scientific]');
 const equalsButton = document.querySelector('[data-action="calculate"]');
 const deleteButton = document.querySelector('[data-action="delete"]');
 const allClearButton = document.querySelector('[data-action="clear"]');
@@ -270,6 +341,12 @@ const currentOperandTextElement = document.getElementById('current-operand');
 const calculator = new Calculator(previousOperandTextElement, currentOperandTextElement);
 
 // Event Listeners
+if (historyClearBtn) {
+    historyClearBtn.addEventListener('click', () => {
+        calculator.clearHistory();
+    });
+}
+
 numberButtons.forEach(button => {
     button.addEventListener('click', () => {
         calculator.appendNumber(button.dataset.number);

@@ -22,6 +22,68 @@
 - **📝 계산 히스토리**: "아까 그 값 뭐였지?" 당황하지 마세요. 최근 계산 기록이 자동으로 저장되어 언제든 다시 불러올 수 있습니다.
 - **📱 반응형 디자인**: 강의실에서는 노트북으로, 이동 중에는 스마트폰으로. 어떤 화면에서도 완벽한 비율을 자랑합니다.
 
+## 🏆 왜 Carculator인가요? (Why Carculator?)
+
+이 프로젝트는 단순한 계산기가 아닙니다. **사용자 경험(UX)과 코드 품질**의 정점을 추구했습니다.
+
+### 1. 디자인의 정점 (Design Excellence)
+- **Glassmorphism & Neumorphism**: 최신 디자인 트렌드를 반영한 반투명 유리 효과와 세련된 그림자 처리를 적용했습니다.
+- **Space Grotesk Typography**: 공학적 정밀함이 느껴지는 구글 폰트를 사용하여 가독성과 미학을 동시에 잡았습니다.
+- **Micro-Interactions**: 버튼 클릭 시 미세한 스케일 변화와 그림자 조정을 통해 마치 실제 버튼을 누르는 듯한 타건감을 시각적으로 구현했습니다.
+
+### 2. 기술적 우수성 (Engineering)
+- **Pure Vanilla JS**: 무거운 프레임워크 없이 순수 자바스크립트 클래스(Class) 기반으로 설계하여, 초경량/초고속 퍼포먼스를 자랑합니다.
+- **Clean Architecture**: `Calculator` 클래스 내에 상태 관리와 비즈니스 로직을 완벽하게 캡슐화하여 유지보수성을 극대화했습니다.
+- **Local Persistence**: 브라우저를 닫아도 테마 설정과 계산 기록이 유지되도록 `localStorage`를 최적화하여 활용했습니다.
+
+## 🏗️ 시스템 아키텍처 (System Architecture)
+
+Carculator는 **MVC (Model-View-Controller) 패턴**에 영감을 받아 관심사를 명확히 분리했습니다.
+
+- **View (UI Layer)**: `index.html`과 Tailwind CSS가 담당하며, 사용자에게 보여지는 시각적 요소를 정의합니다.
+- **Controller (Event Layer)**: `app.js`의 이벤트 리스너들이 사용자의 입력을 감지하고 로직을 호출합니다.
+- **Model (Logic Layer)**: `Calculator` 클래스가 핵심 연산, 상태 관리, 데이터 영속성(Storage)을 책임집니다.
+
+```mermaid
+graph TD
+    User((👤 User))
+    
+    subgraph "View (UI)"
+        DOM[💻 DOM Elements]
+        Buttons[⌨️ Buttons & Keypad]
+        Display[🖥️ Display Area]
+    end
+
+    subgraph "Controller (app.js)"
+        Events[⚡ Event Listeners]
+    end
+
+    subgraph "Model (Core Logic)"
+        CalcClass[🧠 Calculator Class]
+        CalcState[📊 Current State]
+        Ops[🧮 Operations]
+    end
+
+    subgraph "Data Persistence"
+        LocalStorage[(💾 Local Storage)]
+    end
+
+    User -->|Clicks| Buttons
+    User -->|Keydown| Events
+    Buttons -->|Trigger| Events
+    Events -->|Call Method| CalcClass
+    
+    CalcClass -->|Update| CalcState
+    CalcClass -->|Compute| Ops
+    CalcClass -->|Save/Load| LocalStorage
+    
+    CalcClass -->|Render| Display
+    
+    style CalcClass fill:#137fec,stroke:#fff,stroke-width:2px,color:#fff
+    style LocalStorage fill:#e1e4e8,stroke:#333,stroke-width:2px
+    style User fill:#333,stroke:#fff,stroke-width:2px,color:#fff
+```
+
 ## 🛠️ 기술 스택 (Tech Stack)
 
 이 프로젝트는 최신 웹 표준 기술로 만들어졌습니다. 웹 개발 입문자 코드를 뜯어보며 공부하기에도 좋습니다!
